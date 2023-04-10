@@ -10,11 +10,18 @@ abstract class RetrievingInteractor<DomainType>(private val errorMapper: TypeMap
 
     abstract suspend fun run(): DomainType
 
-    suspend operator fun invoke() : Either<Failure, DomainType> {
+    /**
+     * @param mapper   to map data model from domain to presentation layer type
+     *                 it is important to move all data transformation to the background
+     *                 execution without exposing data types from other modules
+     */
+
+    suspend operator fun <PresentationType> invoke(
+        mapper: TypeMapper<DomainType, PresentationType>
+    ): Either<Failure, PresentationType> {
         return try {
-            Right(run())
-        }
-        catch (throwable : Throwable) {
+            Right(mapper.map(run()))
+        } catch (throwable: Throwable) {
             Left(errorMapper.map(throwable))
         }
     }
